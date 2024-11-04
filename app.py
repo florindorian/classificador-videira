@@ -1,82 +1,83 @@
 import streamlit as st
-import gdown
-import tensorflow as tf
-import io
 from PIL import Image
 import numpy as np
+import tensorflow as tf
 import pandas as pd
+import io
+import gdown
 import plotly.express as px
 
-# -- Carrega a função uma única vez
+
 @st.cache_resource
 def carrega_modelo():
     url = 'https://drive.google.com/uc?id=19Yi7m4TxCT1xPOcOKT6ZjcrsfDObcTNC'
-    gdown.download(url, 'modelo_quantizado16bits.tflite')
-    interpreter = tf.lite.interpreter(model_path='modelo_quantizado16bits.tflite')
+    
+    gdown.download(url,'modelo_quantizado16bits.tflite')
+    interpreter = tf.lite.Interpreter(model_path='modelo_quantizado16bits.tflite')
     interpreter.allocate_tensors()
-
+    
     return interpreter
 
-def carrega_imagem():
-    uploaded_file = st.file.uploader('Arraste e solte uma imagem aqui ou clique para selecionar uma', type=['png', 'jpg', 'jpeg'])
 
+def carrega_imagem():
+    # Cria um file uploader que permite o usuário carregar imagens
+    uploaded_file = st.file_uploader("Arraste e solte uma imagem aqui ou clique para selecionar uma", type=['png', 'jpg', 'jpeg'])
     if uploaded_file is not None:
+        # Para ler a imagem como um objeto PIL Image
         image_data = uploaded_file.read()
-        # -- Pega os dados binários da variável uploaded e passa à biblioteca PIL para conversão para imagem 
         image = Image.open(io.BytesIO(image_data))
 
+        # Mostrar a imagem carregada
         st.image(image)
-        st.success('Imagem foi carregada com sucesso')
+        st.success("Imagem carregada com sucesso!")
 
+        #Pré-processamento da imagem
         image = np.array(image, dtype=np.float32)
-        image = image / 255.0 # -- Divide os valores dos pixels da imagem (que podem ser de 0 a 255)
+        image = image / 255.0  # Normalização para o intervalo [0, 1]
         image = np.expand_dims(image, axis=0)
 
         return image
 
-def previsao(interpreter, image):
-    input_datails = interpreter.get_input_details()
-    output_datails = interpreter.get_output_details()
 
-    interpreter.set_tensor(input_datails[0]['index'], image)
+def previsao(interpreter,image):
+    # Obtém detalhes dos tensores de entrada e saída
+    input_details = interpreter.get_input_details()
+    output_details = interpreter.get_output_details()
 
-    # -- invoca o interpretador para fazer a inferência
+    # Define o tensor de entrada para o modelo
+    interpreter.set_tensor(input_details[0]['index'], image)
+
+    # Executa a inferência
     interpreter.invoke()
 
-    output_data = interpreter.get_tensor(output_datails[0]['index'])
+    # Obtém a saída do modelo
+    output_data = interpreter.get_tensor(output_details[0]['index'])
     classes = ['BlackMeasles', 'BlackRot', 'HealthyGrapes', 'LeafBlight']
-
     df = pd.DataFrame()
     df['classes'] = classes
-    df['probabilidades (%)'] = 100 * output_data[9]
-
-    fig = px.bar(df,y='classes',x='probabilidades (%)',  
-                 orientation='h', 
-                 text='probabilidades (%)', 
-                 title='Probabilidade de Classes de Doenças em Uvas')
-    
-    # -- Plot da figura
+    df['probabilidades (%)'] = 100*output_data[0]
+    fig = px.bar(df, y='classes', x='probabilidades (%)', orientation='h', text='probabilidades (%)',
+             title='Probabilidade de Classes de Doenças em Uvas')
     st.plotly_chart(fig)
 
 
 def main():
     st.set_page_config(
         page_title="Classifica Folhas de Videira",
-        page_icon="��",
+        page_icon="🍇",
     )
+    
+    st.write("# Classifica Folhas de Videira! 🍇")
+    
 
-    st.write("# Classifica Folhas de Videira! ��")
-
-    #Carrega modelo
     interpreter = carrega_modelo()
 
-    #Carrega imagem
     image = carrega_imagem()
 
-    #Classifica
     if image is not None:
-        previsao(interpreter, image)
 
+        previsao(interpreter,image)
+    
 
 if __name__ == "__main__":
     main()
