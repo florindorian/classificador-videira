@@ -26,6 +26,7 @@ def carrega_imagem():
         # Para ler a imagem como um objeto PIL Image
         image_data = uploaded_file.read()
         image = Image.open(io.BytesIO(image_data))
+        image = image.resize((256, 256))
 
         # Mostrar a imagem carregada
         st.image(image)
