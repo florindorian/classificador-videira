@@ -1,0 +1,5 @@
+models/modelo_cnn_inicial.pkl filter=lfs diff=lfs merge=lfs -text
+models/baixados filter=lfs diff=lfs merge=lfs -text
+models/baixados/modelo_quantizado16bits.tflite filter=lfs diff=lfs merge=lfs -text
+models/modelo_apos_aumento.h5 filter=lfs diff=lfs merge=lfs -text
+models/modelo_apos_aumento.keras filter=lfs diff=lfs merge=lfs -text

@@ -1,0 +1,5 @@
+.env
+.devcontainer/
+.git/
+.vscode/
+.idea/
